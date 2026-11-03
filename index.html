@@ -124,7 +124,7 @@ input:focus,select:focus{border-color:var(--g);box-shadow:0 0 0 4px rgba(63,138,
 <div class="card glass" style="margin-top:14px"><h2>Jualan vs belanja harian</h2><div class="chart" id="ch"></div><div class="leg"><span style="--c:var(--g)">Jualan</span><span style="--c:var(--r)">Belanja</span></div><div class="tip" id="tip">Tekan mana-mana hari untuk lihat butiran.</div></div>
 <div class="grid k2" style="margin-top:14px">
 <div class="card glass"><h2>Belanja ikut kategori</h2><div class="donut"><div style="position:relative"><svg viewBox="0 0 100 100" id="dn"></svg><div class="dc" id="dcn"></div></div><div class="ls" id="dl"></div></div></div>
-<div class="card glass"><h2>Mod bayaran jualan</h2><div id="pay"></div></div>
+<div class="card glass"><h2>Mod bayaran belanja</h2><div id="pay"></div></div>
 </div>
 </section>
 
@@ -132,7 +132,6 @@ input:focus,select:focus{border-color:var(--g);box-shadow:0 0 0 4px rgba(63,138,
 <div class="card glass"><h2>Key-in jualan harian</h2>
 <label>Tarikh</label><input type="date" id="sd">
 <label>Jumlah jualan (RM)</label><input type="number" id="sa" inputmode="decimal" placeholder="0.00" step="0.01">
-<label>Mod bayaran</label><select id="sm"><option>Cash</option><option>QR</option><option>Touch n Go</option></select>
 <label>Nota</label><input id="sn" placeholder="Cth: Total sale harian kedai">
 <button class="btn" id="sb">Simpan jualan</button></div>
 <div class="card glass"><h2>Rekod jualan <span id="sc" class="tag ok"></span></h2><div id="sl"></div></div>
@@ -199,7 +198,7 @@ function go(){defDate();render()}
 
 /* add */
 $('#sb').onclick=function(){var a=parseFloat($('#sa').value);if(!(a>0))return toast('Masukkan jumlah jualan');
-S.sales.push({id:Date.now(),d:$('#sd').value,a:a,m:$('#sm').value,n:$('#sn').value});$('#sa').value='';$('#sn').value='';save();render();toast('Jualan disimpan')};
+S.sales.push({id:Date.now(),d:$('#sd').value,a:a,n:$('#sn').value});$('#sa').value='';$('#sn').value='';save();render();toast('Jualan disimpan')};
 $('#eb').onclick=function(){var a=parseFloat($('#ea').value);if(!(a>0))return toast('Masukkan jumlah belanja');
 S.exp.push({id:Date.now(),d:$('#ed').value,a:a,c:$('#ec').value,m:$('#em').value,n:$('#en').value});$('#ea').value='';$('#en').value='';save();render();toast('Belanja disimpan')};
 $('#ab').onclick=function(){var n=$('#an').value.trim();if(!n)return toast('Isi nama item');
@@ -211,7 +210,7 @@ window.qty=function(id,d,v){var s=S.stock.find(function(x){return x.id===id});s.
 window.rms=function(id){S.stock=S.stock.filter(function(x){return x.id!==id});save();render()};
 
 function list(a,k,col){if(!a.length)return '<div class="empty">Belum ada rekod bulan ini</div>';
-return a.map(function(x,i){return '<div class="li" style="animation-delay:'+Math.min(i*30,300)+'ms"><div class="d">'+dfor(x)+'</div><div class="n">'+esc(x.n||(k==='sales'?'Jualan harian':x.c))+'<small>'+esc(x.m)+(k==='exp'?' · '+esc(x.c):'')+'</small></div><div class="a" style="color:'+col+'">'+rm(x.a)+'</div><button class="x" onclick="del(\''+k+'\','+x.id+')">✕</button></div>'}).join('')}
+return a.map(function(x,i){return '<div class="li" style="animation-delay:'+Math.min(i*30,300)+'ms"><div class="d">'+dfor(x)+'</div><div class="n">'+esc(x.n||(k==='sales'?'Jualan harian':x.c))+(k==='exp'?'<small>'+esc(x.m)+' · '+esc(x.c)+'</small>':'')+'</div><div class="a" style="color:'+col+'">'+rm(x.a)+'</div><button class="x" onclick="del(\''+k+'\','+x.id+')">✕</button></div>'}).join('')}
 
 function bar(el,p){requestAnimationFrame(function(){requestAnimationFrame(function(){el.style.width=Math.min(100,p)+'%'})})}
 
@@ -239,8 +238,8 @@ document.querySelectorAll('.ls div').forEach(function(z){z.classList.toggle('sel
 $('#dl').innerHTML=ce.length?ce.map(function(c,i){return '<div data-c="'+c+'"><em style="background:'+CC[i%6]+'"></em>'+esc(c)+'<b>'+(cats[c]/te*100).toFixed(0)+'%</b></div>'}).join(''):'<div class="empty">Tiada data</div>';
 document.querySelectorAll('#dn circle[data-c],.ls div[data-c]').forEach(function(z){z.onclick=function(){sel(z.dataset.c)}});sel(null);
 /* pay */
-var pm={};sa.forEach(function(x){pm[x.m]=(pm[x.m]||0)+x.a});
-$('#pay').innerHTML=Object.keys(pm).length?Object.keys(pm).map(function(k){var pc=pm[k]/ts*100;return '<div class="row" style="margin-top:8px"><b>'+esc(k)+'</b><span>'+rm(pm[k])+' · '+pc.toFixed(0)+'%</span></div><div class="pb"><div class="pp" data-p="'+pc+'"></div></div>'}).join(''):'<div class="empty">Tiada data</div>';
+var pm={};ex.forEach(function(x){pm[x.m]=(pm[x.m]||0)+x.a});
+$('#pay').innerHTML=Object.keys(pm).length?Object.keys(pm).map(function(k){var pc=pm[k]/te*100;return '<div class="row" style="margin-top:8px"><b>'+esc(k)+'</b><span>'+rm(pm[k])+' · '+pc.toFixed(0)+'%</span></div><div class="pb"><div class="pp" data-p="'+pc+'"></div></div>'}).join(''):'<div class="empty">Tiada data</div>';
 document.querySelectorAll('.pp').forEach(function(e){bar(e,+e.dataset.p)});
 /* lists */
 $('#sl').innerHTML=list(sa,'sales','var(--g)');$('#sc').textContent=rm(ts);
@@ -288,12 +287,12 @@ var cats={};ex.forEach(function(x){cats[x.c]=(cats[x.c]||0)+x.a});
 var ce=Object.keys(cats).sort(function(a,b){return cats[b]-cats[a]});
 if(!ce.length)N0('Tiada belanja.');
 ce.forEach(function(c,i){chk(12);D.setFontSize(9);D.setFont('helvetica','normal');D.setTextColor(40,50,48);D.text(c,m,y);D.text(f(cats[c])+'  ('+(cats[c]/te*100).toFixed(0)+'%)',R,y,{align:'right'});y+=2.5;B(cats[c]/te,rgb(CC[i%6]));y+=7});
-H('Mod bayaran');
-var pj={},pb={};sa.forEach(function(x){pj[x.m]=(pj[x.m]||0)+x.a});ex.forEach(function(x){pb[x.m]=(pb[x.m]||0)+x.a});
-var pk=Object.keys(pj).concat(Object.keys(pb)).filter(function(v,i,a){return a.indexOf(v)===i});
-if(pk.length)T(['Mod','Jualan','Belanja'],pk.map(function(k){return [k,f(pj[k]),f(pb[k])]}),[m,120,R],[0,1,1]);else N0('Tiada data.');
+H('Mod bayaran belanja');
+var pb={};ex.forEach(function(x){pb[x.m]=(pb[x.m]||0)+x.a});
+var pk=Object.keys(pb);
+if(pk.length)T(['Mod bayaran','Jumlah'],pk.map(function(k){return [k,f(pb[k])]}),[m,R],[0,1]);else N0('Tiada data.');
 H('Rekod jualan');
-if(sa.length)T(['Tarikh','Mod','Nota','Jumlah'],sa.map(function(x){return [dfor(x),x.m,tr(x.n,38),f(x.a)]}),[m,38,72,R],[0,0,0,1]);else N0('Tiada rekod.');
+if(sa.length)T(['Tarikh','Nota','Jumlah'],sa.map(function(x){return [dfor(x),tr(x.n||'Jualan harian',60),f(x.a)]}),[m,42,R],[0,0,1]);else N0('Tiada rekod.');
 H('Rekod belanja');
 if(ex.length)T(['Tarikh','Mod','Kategori / Keterangan','Jumlah'],ex.map(function(x){return [dfor(x),x.m,tr(x.c+(x.n?' - '+x.n:''),42),f(x.a)]}),[m,38,72,R],[0,0,0,1]);else N0('Tiada rekod.');
 H('Stocktake (stok semasa)');
