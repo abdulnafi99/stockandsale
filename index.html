@@ -6,6 +6,7 @@
 <title>Selagi Coffee</title>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <style>
 :root{--bg1:#e6f0ea;--bg2:#f6efe2;--tx:#17302a;--mu:#5d7770;--gl:rgba(255,255,255,.55);--gb:rgba(255,255,255,.75);--sh:0 10px 30px rgba(31,77,62,.12);--g:#3f8a6c;--g2:#6fb89a;--r:#d2564f;--a:#d99a2b;--in:rgba(255,255,255,.7);box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);color-scheme:light}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg1:#0d1b17;--bg2:#1a1712;--tx:#e6f2ec;--mu:#8fb0a5;--gl:rgba(255,255,255,.07);--gb:rgba(255,255,255,.14);--sh:0 10px 30px rgba(0,0,0,.4);--g:#5fc19a;--g2:#2f7a5d;--r:#ef7a73;--a:#f0b650;--in:rgba(255,255,255,.08);color-scheme:dark}}
@@ -110,7 +111,7 @@ input:focus,select:focus{border-color:var(--g);box-shadow:0 0 0 4px rgba(63,138,
 <div class="app">
 <header class="glass">
 <div class="logo">🌿</div>
-<div><h1>Selagi Coffee</h1><div class="sub">Sistem urus niaga &amp; stok</div></div>
+<div><h1>Selagi Coffee</h1><div class="sub">Sistem urus niaga &amp; stok</div><div class="sub" id="cl"></div></div>
 <div class="mon"><button id="pv">‹</button><b id="ml"></b><button id="nx">›</button></div>
 <button class="pdfb" id="pdf">📄 Export PDF</button>
 </header>
@@ -171,7 +172,17 @@ var STC=['Syrup','Susu','Kopi & bijirin','Cawan & packaging','Lain-lain'],STI={'
 try{S=JSON.parse(localStorage.getItem(KEY))}catch(e){}
 if(!S)S={sales:[],exp:[],target:12000,stock:[
 {id:1,n:'Vanilla',c:'Syrup',u:'botol',q:5,min:3,t:''},{id:2,n:'Caramel',c:'Syrup',u:'botol',q:2,min:3,t:''},{id:3,n:'Hazelnut',c:'Syrup',u:'botol',q:1,min:2,t:''},{id:4,n:'Brown Sugar',c:'Syrup',u:'botol',q:6,min:3,t:''},{id:5,n:'Chocolate sauce',c:'Syrup',u:'botol',q:3,min:2,t:''},{id:6,n:'Susu segar',c:'Susu',u:'liter',q:12,min:6,t:''},{id:7,n:'Biji kopi',c:'Kopi & bijirin',u:'kg',q:3,min:2,t:''},{id:8,n:'Cawan 12oz',c:'Cawan & packaging',u:'pek',q:4,min:2,t:''}]};
-function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}push()}
+/* ===== Supabase (publishable key sahaja; JANGAN letak secret key di sini) ===== */
+var SB=null,SBT;
+try{SB=supabase.createClient('https://nleveeumlgtpauizqyfy.supabase.co','sb_publishable_AiK3SaB970BPkVTpGW8VBQ_CuKGUEk2')}catch(e){}
+function cloud(t){var e=document.getElementById('cl');if(e)e.textContent=t}
+function push(){if(!SB)return;clearTimeout(SBT);cloud('☁️ Menyimpan...');SBT=setTimeout(function(){SB.from('selagi_state').upsert({id:'main',data:S,updated_at:new Date().toISOString()}).then(function(r){cloud(r.error?'☁️ Gagal sync':'☁️ Disimpan')})},600)}
+function pull(){if(!SB)return cloud('☁️ Offline');cloud('☁️ Menyambung...');
+SB.from('selagi_state').select('data').eq('id','main').maybeSingle().then(function(r){
+if(r.error){cloud('☁️ Gagal sambung');return}
+if(r.data&&r.data.data&&r.data.data.sales){S=r.data.data;S.stock=S.stock||[];S.stock.forEach(function(s){if(!s.c)s.c='Syrup'});try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}cloud('☁️ Tersambung');render()}
+else push()})}
 if(S.target===15000)S.target=12000;
 S.stock.forEach(function(s){if(!s.c)s.c='Syrup'});
 var $=function(s){return document.querySelector(s)};
@@ -306,7 +317,7 @@ if(!dl)return toast('Muat turun tidak tersedia di paparan ini');
 if(!window.jspdf)return toast('Pustaka PDF belum siap, cuba lagi');
 try{await dl.save({filename:'Laporan-Selagi-Coffee-'+ym()+'.pdf',data:makePDF()});toast('PDF dihantar')}catch(e){if(!e||e.code!=='declined')toast('Gagal export PDF')}};
 STC.forEach(function(c){var o=document.createElement('option');o.textContent=c;$('#ac').appendChild(o)});
-defDate();render();
+defDate();render();pull();
 document.fonts&&document.fonts.ready.then(ind);setTimeout(ind,50);
 </script>
 </body>
